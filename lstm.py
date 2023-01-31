@@ -6,12 +6,45 @@ from keras.models import Sequential
 from keras.layers import Dense, LSTM
 
 from data_handle import data_fetching, split_data
+from exponential_moving_average import EMA
+from simple_moving_average import SMA
+from utils import plot_ema_vs_mid, cal_mse
+
+# constant
+window_size=100
 
 # Fetch data
 data_fetching("AAPL",start="2010-01-01", end="2022-12-31")
 
 # Read data from csv -> Split data into train and test
-train_data, test_data = split_data()
+df = pd.read_csv('data/stock_data.csv')
+train_data, test_data = split_data(df)
+
+N=train_data.size
+
+# Calculate the EMA with a window size of 100
+ema = EMA(train_data, window_size)
+
+# Concat all the mid prices
+all_mid_data = np.concatenate([train_data,test_data],axis=0)
+
+# Calculate MSE
+# mse = cal_mse(pd.DataFrame(train_data), ema)
+# print('MSE for EMA: %.5f'%mse[0])
+
+# # Plot EMA predictions vs mid price
+# plot_ema_vs_mid(ema, all_mid_data)
+
+# Calculte the SMA
+sma = SMA(train_data, window_size)
+
+# Calculate MSE
+# mse = cal_mse(pd.DataFrame(train_data), sma)
+# print('MSE for SMA: %.5f'%mse[0])
+
+# # Plot EMA predictions vs mid price
+# plot_ema_vs_mid(sma, all_mid_data)
+
 
 # Reshape the data for the LSTM model
 # X_train = train_data[:-1]
