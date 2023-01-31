@@ -1,73 +1,59 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import os
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
-from keras.layers import Dense, LSTM
-
+from keras.layers import Dense, LSTM, Dropout
 from data_handle import data_fetching, split_data
-from exponential_moving_average import EMA
-from simple_moving_average import SMA
-from utils import plot_ema_vs_mid, cal_mse
 
-# constant
-window_size=100
+
+def incorporate_timesteps(data,window_size):
+    X_train = []
+    y_train = []
+
+    for i in range(window_size, data.size):
+        X_train.append(data[i - window_size:i,0])
+        y_train.append(data[i,0])
+    X_train, y_train = np.array(X_train), np.array(y_train)
+    print(X_train)
+    X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+    return X_train, y_train
 
 # Fetch data
-data_fetching("AAPL",start="2010-01-01", end="2022-12-31")
-
-# Read data from csv -> Split data into train and test
+if not os.path.exists("data/stock_data.csv"):
+    data_fetching('AAPL',start='2010-01-01', end='2022-12-31')
+# read csv
 df = pd.read_csv('data/stock_data.csv')
+# Split data into train and test
 train_data, test_data = split_data(df)
+# Normalization
+scale = MinMaxScaler(feature_range=(0,1))
+scale_train_data = scale.fit_transform(train_data)
+scale_test_data = scale.fit_transform(test_data)
+# Incorporating timesteps into data
+window_size = int(scale_train_data.size*0.3)
+X_train, y_train = incorporate_timesteps(scale_train_data, window_size = window_size)
+X_test, y_test = incorporate_timesteps(scale_test_data, window_size = window_size)
+# Model
+model = Sequential()
+model.add(LSTM(units=50,return_sequences=True,input_shape=(X_train.shape[1], 1)))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50,return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50,return_sequences=True))
+model.add(Dropout(0.2))
+model.add(LSTM(units=50))
+model.add(Dropout(0.2))
+model.add(Dense(units=1))
+model.compile(optimizer='adam',loss='mean_squared_error')
 
-N=train_data.size
+history = model.fit(X_train,y_train,epochs=25,batch_size=32)
 
-# Calculate the EMA with a window size of 100
-ema = EMA(train_data, window_size)
+model.save_weights('./model/lstm')
 
-# Concat all the mid prices
-all_mid_data = np.concatenate([train_data,test_data],axis=0)
-
-# Calculate MSE
-# mse = cal_mse(pd.DataFrame(train_data), ema)
-# print('MSE for EMA: %.5f'%mse[0])
-
-# # Plot EMA predictions vs mid price
-# plot_ema_vs_mid(ema, all_mid_data)
-
-# Calculte the SMA
-sma = SMA(train_data, window_size)
-
-# Calculate MSE
-# mse = cal_mse(pd.DataFrame(train_data), sma)
-# print('MSE for SMA: %.5f'%mse[0])
-
-# # Plot EMA predictions vs mid price
-# plot_ema_vs_mid(sma, all_mid_data)
+result = model.evaluate(X_test, y_test, batch_size=32)
 
 
-# Reshape the data for the LSTM model
-# X_train = train_data[:-1]
-# y_train = train_data[1:,3]
-# X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
 
-# X_test = test_data[:-1]
-# y_test = test_data[1:,3]
-# X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
 
-# # Build the LSTM model
-# model = Sequential()
-# model.add(LSTM(50, return_sequences=True, input_shape=(X_train.shape[1], X_train.shape[2])))
-# model.add(LSTM(50))
-# model.add(Dense(1))
-# model.compile(loss='mean_squared_error', optimizer='adam')
-
-# # Train the LSTM model
-# history = model.fit(X_train, y_train, epochs=100, batch_size=32, validation_data=(X_test, y_test))
-
-# # Plot the training and validation loss
-# plt.plot(history.history['loss'], label='train')
-# plt.plot(history.history['val_loss'], label='test')
-# plt.legend()
-# plt.show()
 
