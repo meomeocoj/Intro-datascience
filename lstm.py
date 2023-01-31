@@ -10,12 +10,10 @@ from data_handle import data_fetching, split_data
 def incorporate_timesteps(data,window_size):
     X_train = []
     y_train = []
-
     for i in range(window_size, data.size):
         X_train.append(data[i - window_size:i,0])
         y_train.append(data[i,0])
     X_train, y_train = np.array(X_train), np.array(y_train)
-    print(X_train)
     X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
     return X_train, y_train
 
