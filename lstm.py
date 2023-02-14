@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 from data_handle import data_fetching 
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
 from utils import plot_predictions_vs_true
 
@@ -21,13 +21,13 @@ def preprocessing_data():
     df['Mid Average'] = df[['High','Low']].astype(float).mean(axis=1)
 
     # Feature engineering 
-    window = 20
+    window = 50 
 
-    df["MA_20"] = df['Adj Close'].rolling(window=window).mean() # Moving average
+    df["MA_50"] = df['Adj Close'].rolling(window=window).mean() # Moving average
     std = df['Adj Close'].rolling(window=window).std()
 
-    df["Upper Band"] = df['MA_20'] + 2*std #Bollinger Band
-    df["Lower Band"] = df['MA_20'] - 2*std
+    df["Upper Band"] = df['MA_50'] + 2*std #Bollinger Band
+    df["Lower Band"] = df['MA_50'] - 2*std
 
     df['Returns'] = df['Adj Close'].pct_change()
     df['Volatility'] = df['Returns'].rolling(window=window).std() # Volatility
@@ -43,7 +43,8 @@ def preprocessing_data():
     df_train, df_test = train_test_split(df,test_size=0.1,shuffle = False)
 
     # Mid average price col num
-    mid_average_col_num = df.columns.get_loc('Mid Average')
+    mid_average_col_num = df.columns.get_loc('Mid Average') - 1
+    print(df_train)
 
     # Normalization
     scale = MinMaxScaler(feature_range=(0,1))
@@ -96,6 +97,8 @@ model = create_model(X_train)
 model.load_weights('./model/lstm')
 result = model.predict(X_test,)
 rmse = mean_squared_error(result, y_test,squared = False) 
+mape = mean_absolute_percentage_error(y_test, result)
+print(mape)
 print(rmse)
 plot_predictions_vs_true(result, y_test, title="LTSM prediction")
 
