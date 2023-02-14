@@ -102,7 +102,29 @@ def plot_data_EMA_SMA(df, window):
 
     fig.autofmt_xdate()
     plt.legend(fontsize=14)
-    plt.show()     
+    plt.show()
+
+def plot_data_EMA_SMA_test(df, range, window):
+    fig, ax = plt.subplots(figsize=(20, 10))
+
+    ax.set_title("Apple Inc - Price chart (Mid Price) vs EMA vs SMA with window size of 50 from 08/2021 to 12/2022")
+    ax.set_ylabel("Price ($)")
+
+
+    monthly_locator = mdates.MonthLocator()
+    half_year_locator = mdates.MonthLocator(interval=1)
+    month_year_formatter = mdates.DateFormatter('%b, %Y')
+    ax.xaxis.set_major_locator(half_year_locator)
+    ax.xaxis.set_minor_locator(monthly_locator)
+    ax.xaxis.set_major_formatter(month_year_formatter)
+
+    ax.plot(df["Date"][len(df)-range:], df['Mid Price'][len(df)-range:], label="True")
+    ax.plot(df['Date'][len(df)-range:], df['SMA_{}'.format(window)][len(df)-range:], label="SMA_{}".format(window))
+    ax.plot(df['Date'][len(df)-range:], df['EMA_{}'.format(window)][len(df)-range:], label="EMA_{}".format(window))
+
+    fig.autofmt_xdate()
+    plt.legend(fontsize=14)
+    plt.show()    
 
 # Fetch data
 if not os.path.exists("data/stock_data.csv"): 
@@ -141,3 +163,6 @@ print('MAPE of EMA: %.5f'%ema_mape)
 plot_data_SMA(df)
 plot_data_EMA(df)
 plot_data_EMA_SMA(df, 50)
+# print(len(df))
+# 278 records
+plot_data_EMA_SMA_test(df, 278, 50)
