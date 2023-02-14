@@ -10,7 +10,6 @@ from keras.layers import Dense, LSTM, Dropout
 from data_handle import data_fetching 
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from sklearn.model_selection import train_test_split
-from utils import plot_predictions_vs_true
 
 def preprocessing_data():
     # Fetch data
@@ -85,7 +84,7 @@ def create_model(X_train):
 
 def run_lstm(X_train, y_train):
     model = create_model(X_train)
-    model.fit(X_train,y_train, epochs=25,batch_size=32)
+    model.fit(X_train,y_train, epochs=50,batch_size=32)
     model.save_weights('./model/lstm')
 
 X_train, y_train, X_test, y_test, df_train, df_test = preprocessing_data()
@@ -105,11 +104,8 @@ print(rmse)
 def plot_prediction_true(predict, true, df_test, title):
     df_test["Date"] = pd.to_datetime(df_test['Date'], errors='coerce', utc=True)
     fig, ax = plt.subplots(figsize=(20, 10))
-
     ax.set_title(title)
     ax.set_ylabel("Mid Price ($)")
-
-
     monthly_locator = mdates.MonthLocator()
     half_year_locator = mdates.MonthLocator(interval=1)
     month_year_formatter = mdates.DateFormatter('%b, %Y')
@@ -125,9 +121,3 @@ def plot_prediction_true(predict, true, df_test, title):
     plt.show()
 
 plot_prediction_true(result, y_test,  df_test, "LTSM prediction")
-
-
-
-
-
-
