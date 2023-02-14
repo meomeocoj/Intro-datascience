@@ -10,6 +10,3 @@ def plot_predictions_vs_true(predictions, mid_data, title):
     plt.title(title)
     plt.legend(fontsize=18)
     plt.show()
-
-def cal_mse(predictions, true):
-    return np.square(np.subtract(true, predictions)).mean()
