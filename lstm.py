@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 import ta
+import matplotlib.pyplot as plt 
+import matplotlib.dates as mdates
 from sklearn.preprocessing import MinMaxScaler
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
@@ -44,7 +46,6 @@ def preprocessing_data():
 
     # Mid average price col num
     mid_average_col_num = df.columns.get_loc('Mid Average') - 1
-    print(df_train)
 
     # Normalization
     scale = MinMaxScaler(feature_range=(0,1))
@@ -54,7 +55,7 @@ def preprocessing_data():
     # Incorporating timesteps into data
     X_train, y_train = incorporate_timesteps(scale_train_data, target=mid_average_col_num, window_size = window)
     X_test, y_test = incorporate_timesteps(scale_test_data, target=mid_average_col_num, window_size = window)
-    return X_train, y_train, X_test, y_test
+    return X_train, y_train, X_test, y_test, df_train, df_test
 
 
 def incorporate_timesteps(data, target,  window_size):
@@ -87,7 +88,7 @@ def run_lstm(X_train, y_train):
     model.fit(X_train,y_train, epochs=25,batch_size=32)
     model.save_weights('./model/lstm')
 
-X_train, y_train, X_test, y_test = preprocessing_data()
+X_train, y_train, X_test, y_test, df_train, df_test = preprocessing_data()
 
 
 # run_lstm(X_train, y_train)
@@ -100,7 +101,31 @@ rmse = mean_squared_error(result, y_test,squared = False)
 mape = mean_absolute_percentage_error(y_test, result)
 print(mape)
 print(rmse)
-plot_predictions_vs_true(result, y_test, title="LTSM prediction")
+
+def plot_prediction_true(predict, true, df_test, title):
+    df_test["Date"] = pd.to_datetime(df_test['Date'], errors='coerce', utc=True)
+    fig, ax = plt.subplots(figsize=(20, 10))
+
+    ax.set_title(title)
+    ax.set_ylabel("Mid Price ($)")
+
+
+    monthly_locator = mdates.MonthLocator()
+    half_year_locator = mdates.MonthLocator(interval=1)
+    month_year_formatter = mdates.DateFormatter('%b, %Y')
+    ax.xaxis.set_major_locator(half_year_locator)
+    ax.xaxis.set_minor_locator(monthly_locator)
+    ax.xaxis.set_major_formatter(month_year_formatter)
+
+    ax.plot(df_test["Date"][50:], true, label="Actual")
+    ax.plot(df_test["Date"][50:], predict, label="Prediction")
+
+    fig.autofmt_xdate()
+    plt.legend(fontsize=14)
+    plt.show()
+
+plot_prediction_true(result, y_test,  df_test, "LTSM prediction")
+
 
 
 
